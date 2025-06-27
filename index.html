@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <title>QRコード生成アプリ</title>
+  <title>QRコード生成</title>
   <style>
     body {
       font-family: sans-serif;
@@ -51,7 +51,7 @@
   <button id="mobileToggle">📱 モバイル切替</button>
 
   <h1>QRコード生成</h1>
-  <input type="text" id="inputText" placeholder="任意の文字列（空でランダム）" />
+  <input type="text" id="inputText" placeholder="任意の文字列（空ならランダムになります）" />
   <input type="number" id="lengthInput" value="16" min="1" max="100" style="width: 60px;" />
 
   <br />
@@ -78,15 +78,15 @@
   </div>
 
   <div class="button-group">
-    <button id="prevBtn">⬅️ 戻る</button>
-    <button id="nextBtn">進む ➡️</button>
+    <button id="prevBtn">⬅戻る</button>
+    <button id="nextBtn">進む➡</button>
     <select id="historySelect"></select>
-    <button id="deleteBtn">🗑️ 削除</button>
-    <button id="renameBtn">✏️ 名前変更</button>
-    <button id="moveUpBtn">⬆️ 上へ</button>
-    <button id="moveDownBtn">⬇️ 下へ</button>
-    <button id="exportBtn">💾 エクスポート</button>
-    <button id="importBtn">📂 インポート</button>
+    <button id="deleteBtn">削除</button>
+    <button id="renameBtn">名前変更</button>
+    <button id="moveUpBtn">⬆上へ</button>
+    <button id="moveDownBtn">⬇下へ</button>
+    <button id="exportBtn">💾エクスポート</button>
+    <button id="importBtn">📂インポート</button>
     <input type="file" id="importFile" style="display:none;" accept=".json">
   </div>
 
@@ -174,8 +174,8 @@
     document.getElementById("copyBtn").onclick = () => {
       if (lastText) {
         navigator.clipboard.writeText(lastText)
-          .then(() => alert("コピーしました！"))
-          .catch(() => alert("コピーに失敗しました"));
+          .then(() => alert("コピーしました"))
+          .catch(() => alert("コピー失敗"));
       }
     };
 
