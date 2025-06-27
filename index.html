@@ -1,340 +1,186 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <title>QRコード生成</title>
-  <style>
-    body {
-      font-family: sans-serif;
-      background: #f0f0f0;
-      margin: 0;
-      padding: 20px;
-      text-align: center;
-    }
-    #mobileToggle {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 1000;
-    }
-    input, button, select, label {
-      font-size: 16px;
-      padding: 8px;
-      margin: 5px;
-    }
-    .button-group {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-    #qrcode {
-      margin: 20px auto;
-      display: flex;
-      justify-content: center;
-    }
-    #randomText {
-      margin-top: 10px;
-      font-size: 18px;
-    }
-    .mobile-mode body, .mobile-mode input, .mobile-mode button, .mobile-mode select {
-      font-size: 18px;
-    }
-    .mobile-mode #qrcode canvas {
-      width: 200px !important;
-      height: 200px !important;
-    }
-  </style>
+<meta charset="UTF-8" />
+<title>QRコード生成</title>
+<style>
+  body {
+    font-family: sans-serif;
+    background: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+    text-align: center;
+  }
+  #mobileToggle {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+  }
+  input, button, select, label {
+    font-size: 16px;
+    padding: 8px;
+    margin: 5px;
+  }
+  .button-group {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  #qrcode {
+    margin: 20px auto;
+    display: flex;
+    justify-content: center;
+  }
+  #randomText {
+    margin-top: 10px;
+    font-size: 18px;
+  }
+  .mobile-mode body,
+  .mobile-mode input,
+  .mobile-mode button,
+  .mobile-mode select,
+  .mobile-mode label {
+    font-size: 20px;
+  }
+  .mobile-mode .button-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .mobile-mode #qrcode canvas {
+    width: 90vw !important;
+    height: 90vw !important;
+  }
+</style>
 </head>
 <body>
-  <button id="mobileToggle">📱 モバイル切替</button>
+<button id="mobileToggle">📱 モバイル切替</button>
 
-  <h1>QRコード生成</h1>
-  <input type="text" id="inputText" placeholder="任意の文字列（空ならランダムになります）" />
-  <input type="number" id="lengthInput" value="16" min="1" max="100" style="width: 60px;" />
+<h1>QRコード生成</h1>
+<input type="text" id="inputText" placeholder="任意の文字列（空ならランダムになります）" />
+<input type="number" id="lengthInput" value="16" min="1" max="100" style="width: 60px;" />
+<br />
+<label>
+  前景色:
+  <input type="color" id="foregroundColor" value="#000000" />
+  <span id="fgPreview" style="display:inline-block;width:24px;height:24px;vertical-align:middle;border:1px solid #aaa;margin-left:5px;background:#000;"></span>
+</label>
+<label>
+  背景色:
+  <input type="color" id="backgroundColor" value="#ffffff" />
+  <span id="bgPreview" style="display:inline-block;width:24px;height:24px;vertical-align:middle;border:1px solid #aaa;margin-left:5px;background:#fff;"></span>
+</label>
+<br />
+<label>サイズ: <input type="range" id="sizeSlider" min="100" max="500" value="300" /></label>
+<span id="sizeLabel">300</span> px
 
-  <br />
-  <label>
-    前景色:
-    <input type="color" id="foregroundColor" value="#000000" />
-    <span id="fgPreview" style="display:inline-block;width:24px;height:24px;vertical-align:middle;border:1px solid #aaa;margin-left:5px;background:#000;"></span>
-  </label>
-  <label>
-    背景色:
-    <input type="color" id="backgroundColor" value="#ffffff" />
-    <span id="bgPreview" style="display:inline-block;width:24px;height:24px;vertical-align:middle;border:1px solid #aaa;margin-left:5px;background:#fff;"></span>
-  </label>
+<div class="button-group">
+  <button id="generateBtn">生成</button>
+  <button id="copyBtn">コピー</button>
+  <button id="downloadBtn">保存</button>
+  <button id="shareBtn">共有</button>
+</div>
 
-  <br />
-  <label>サイズ: <input type="range" id="sizeSlider" min="100" max="500" value="300" /></label>
-  <span id="sizeLabel">300</span> px
+<div id="qrcode"></div>
+<div id="randomText"></div>
 
-  <div class="button-group">
-    <button id="generateBtn">生成</button>
-    <button id="copyBtn">コピー</button>
-    <button id="downloadBtn">保存</button>
-    <button id="shareBtn">共有</button>
-  </div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+  const fgInput = document.getElementById("foregroundColor");
+  const bgInput = document.getElementById("backgroundColor");
+  const fgPreview = document.getElementById("fgPreview");
+  const bgPreview = document.getElementById("bgPreview");
 
-  <div class="button-group">
-    <button id="prevBtn">⬅戻る</button>
-    <button id="nextBtn">進む➡</button>
-    <select id="historySelect"></select>
-    <button id="deleteBtn">削除</button>
-    <button id="renameBtn">名前変更</button>
-    <button id="moveUpBtn">⬆上へ</button>
-    <button id="moveDownBtn">⬇下へ</button>
-    <button id="exportBtn">💾エクスポート</button>
-    <button id="importBtn">📂インポート</button>
-    <input type="file" id="importFile" style="display:none;" accept=".json">
-  </div>
+  fgInput.addEventListener("input", () => {
+    fgPreview.style.backgroundColor = fgInput.value;
+  });
+  bgInput.addEventListener("input", () => {
+    bgPreview.style.backgroundColor = bgInput.value;
+  });
 
-  <div id="qrcode"></div>
-  <div id="randomText"></div>
+  document.getElementById("sizeSlider").oninput = (e) => {
+    document.getElementById("sizeLabel").textContent = e.target.value;
+  };
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-    let history = [];
-    let currentIndex = -1;
-    let lastText = "";
+  function generateRandomString(length) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  }
 
-    const fgInput = document.getElementById("foregroundColor");
-    const bgInput = document.getElementById("backgroundColor");
-    const fgPreview = document.getElementById("fgPreview");
-    const bgPreview = document.getElementById("bgPreview");
-    const historySelect = document.getElementById("historySelect");
+  function updateQRCode(text) {
+    const fg = fgInput.value;
+    const bg = bgInput.value;
+    const size = parseInt(document.getElementById("sizeSlider").value);
 
-    fgInput.addEventListener("input", () => {
-      fgPreview.style.backgroundColor = fgInput.value;
+    const qrDiv = document.getElementById("qrcode");
+    qrDiv.innerHTML = "";
+    new QRCode(qrDiv, {
+      text: text,
+      width: size,
+      height: size,
+      colorDark: fg,
+      colorLight: bg
     });
-    bgInput.addEventListener("input", () => {
-      bgPreview.style.backgroundColor = bgInput.value;
-    });
 
-    document.getElementById("sizeSlider").oninput = (e) => {
-      document.getElementById("sizeLabel").textContent = e.target.value;
-    };
+    document.getElementById("randomText").textContent = "QRコードの内容：" + text;
+    lastText = text;
+  }
 
-    function generateRandomString(length) {
-      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+  let lastText = "";
+
+  document.getElementById("generateBtn").onclick = () => {
+    const input = document.getElementById("inputText").value.trim();
+    const len = parseInt(document.getElementById("lengthInput").value) || 16;
+    const text = input || generateRandomString(len);
+    updateQRCode(text);
+  };
+
+  document.getElementById("copyBtn").onclick = () => {
+    if (lastText) {
+      navigator.clipboard.writeText(lastText)
+        .then(() => alert("コピーしました"))
+        .catch(() => alert("コピー失敗"));
     }
+  };
 
-    function saveHistory(text) {
-      history = history.slice(0, currentIndex + 1);
-      const label = text.length > 20 ? text.slice(0, 20) + "..." : text;
-      history.push({ text, label });
-      if (history.length > 10) {
-        history.shift();
-      }
-      currentIndex = history.length - 1;
-      localStorage.setItem("qrHistory", JSON.stringify(history));
-      updateHistorySelect();
-    }
-
-    function updateHistorySelect() {
-      historySelect.innerHTML = "";
-      history.forEach((item, idx) => {
-        const opt = document.createElement("option");
-        opt.value = idx;
-        opt.textContent = `${idx + 1}: ${item.label}`;
-        historySelect.appendChild(opt);
-      });
-      historySelect.value = currentIndex;
-    }
-
-    function updateQRCode(text) {
-      const fg = fgInput.value;
-      const bg = bgInput.value;
-      const size = parseInt(document.getElementById("sizeSlider").value);
-
-      const qrDiv = document.getElementById("qrcode");
-      qrDiv.innerHTML = "";
-      new QRCode(qrDiv, {
-        text: text,
-        width: size,
-        height: size,
-        colorDark: fg,
-        colorLight: bg
-      });
-
-      document.getElementById("randomText").textContent = "QRコードの内容：" + text;
-      lastText = text;
-    }
-
-    document.getElementById("generateBtn").onclick = () => {
-      const input = document.getElementById("inputText").value.trim();
-      const len = parseInt(document.getElementById("lengthInput").value) || 16;
-      const text = input || generateRandomString(len);
-      updateQRCode(text);
-      saveHistory(text);
-    };
-
-    document.getElementById("copyBtn").onclick = () => {
-      if (lastText) {
-        navigator.clipboard.writeText(lastText)
-          .then(() => alert("コピーしました"))
-          .catch(() => alert("コピー失敗"));
-      }
-    };
-
-    document.getElementById("downloadBtn").onclick = () => {
-      const canvas = document.querySelector("#qrcode canvas");
-      if (canvas) {
-        const link = document.createElement("a");
-        link.download = "qrcode.png";
-        link.href = canvas.toDataURL("image/png");
-        link.click();
-      }
-    };
-
-    document.getElementById("shareBtn").onclick = () => {
-      if (navigator.share && lastText) {
-        navigator.share({
-          title: "QRコード共有",
-          text: lastText,
-          url: location.href
-        }).catch(err => console.log("共有失敗:", err));
-      } else {
-        alert("このブラウザは共有に対応していません。");
-      }
-    };
-
-    document.getElementById("prevBtn").onclick = () => {
-      if (currentIndex > 0) {
-        currentIndex--;
-        updateQRCode(history[currentIndex].text);
-        updateHistorySelect();
-      }
-    };
-
-    document.getElementById("nextBtn").onclick = () => {
-      if (currentIndex < history.length - 1) {
-        currentIndex++;
-        updateQRCode(history[currentIndex].text);
-        updateHistorySelect();
-      }
-    };
-
-    historySelect.onchange = () => {
-      currentIndex = parseInt(historySelect.value);
-      updateQRCode(history[currentIndex].text);
-    };
-
-    document.getElementById("deleteBtn").onclick = () => {
-      if (currentIndex >= 0) {
-        if (confirm("この履歴を削除しますか？")) {
-          history.splice(currentIndex, 1);
-          if (currentIndex >= history.length) {
-            currentIndex = history.length - 1;
-          }
-          localStorage.setItem("qrHistory", JSON.stringify(history));
-          updateHistorySelect();
-          if (currentIndex >= 0) {
-            updateQRCode(history[currentIndex].text);
-          } else {
-            document.getElementById("qrcode").innerHTML = "";
-            document.getElementById("randomText").textContent = "";
-            lastText = "";
-          }
-        }
-      }
-    };
-
-    document.getElementById("renameBtn").onclick = () => {
-      if (currentIndex >= 0) {
-        const newName = prompt("新しい名前を入力してください:", history[currentIndex].label);
-        if (newName !== null && newName.trim()) {
-          history[currentIndex].label = newName.trim();
-          localStorage.setItem("qrHistory", JSON.stringify(history));
-          updateHistorySelect();
-        }
-      }
-    };
-
-    document.getElementById("moveUpBtn").onclick = () => {
-      if (currentIndex > 0) {
-        const tmp = history[currentIndex];
-        history[currentIndex] = history[currentIndex - 1];
-        history[currentIndex - 1] = tmp;
-        currentIndex--;
-        localStorage.setItem("qrHistory", JSON.stringify(history));
-        updateHistorySelect();
-      }
-    };
-
-    document.getElementById("moveDownBtn").onclick = () => {
-      if (currentIndex < history.length - 1) {
-        const tmp = history[currentIndex];
-        history[currentIndex] = history[currentIndex + 1];
-        history[currentIndex + 1] = tmp;
-        currentIndex++;
-        localStorage.setItem("qrHistory", JSON.stringify(history));
-        updateHistorySelect();
-      }
-    };
-
-    document.getElementById("exportBtn").onclick = () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(history, null, 2));
+  document.getElementById("downloadBtn").onclick = () => {
+    const canvas = document.querySelector("#qrcode canvas");
+    if (canvas) {
       const link = document.createElement("a");
-      link.setAttribute("href", dataStr);
-      link.setAttribute("download", "qr_history.json");
-      document.body.appendChild(link);
+      link.download = "qrcode.png";
+      link.href = canvas.toDataURL("image/png");
       link.click();
-      document.body.removeChild(link);
-    };
+    }
+  };
 
-    document.getElementById("importBtn").onclick = () => {
-      document.getElementById("importFile").click();
-    };
+  document.getElementById("shareBtn").onclick = () => {
+    if (navigator.share && lastText) {
+      navigator.share({
+        title: "QRコード共有",
+        text: lastText,
+        url: location.href
+      }).catch(err => console.log("共有失敗:", err));
+    } else {
+      alert("このブラウザは共有に対応していません。");
+    }
+  };
 
-    document.getElementById("importFile").onchange = (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const imported = JSON.parse(e.target.result);
-          if (!Array.isArray(imported) || !imported.every(item => item.text && item.label)) {
-            alert("無効なデータ形式です。");
-            return;
-          }
-          history = imported.slice(0,10);
-          currentIndex = history.length -1;
-          localStorage.setItem("qrHistory", JSON.stringify(history));
-          updateHistorySelect();
-          if (currentIndex >=0){
-            updateQRCode(history[currentIndex].text);
-          }
-          alert("インポートが完了しました！");
-        } catch(err) {
-          alert("読み込みエラー: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-    };
+  document.getElementById("mobileToggle").onclick = () => {
+    document.body.classList.toggle("mobile-mode");
+  };
 
-    document.getElementById("mobileToggle").onclick = () => {
-      document.body.classList.toggle("mobile-mode");
-    };
-
-    window.onload = () => {
-      const stored = localStorage.getItem("qrHistory");
-      if (stored) {
-        history = JSON.parse(stored);
-        if (history.length > 0) {
-          currentIndex = history.length - 1;
-          updateQRCode(history[currentIndex].text);
-          updateHistorySelect();
-          return;
-        }
-      }
-      const len = parseInt(document.getElementById("lengthInput").value) || 16;
-      const text = generateRandomString(len);
-      updateQRCode(text);
-      saveHistory(text);
-    };
-  </script>
+  window.onload = () => {
+    // 自動スマホ判定
+    if (window.innerWidth <= 500) {
+      document.body.classList.add("mobile-mode");
+    }
+    const len = parseInt(document.getElementById("lengthInput").value) || 16;
+    const text = generateRandomString(len);
+    updateQRCode(text);
+  };
+</script>
 </body>
 </html>
+
